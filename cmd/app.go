@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	. "first-steps/config"
+	"first-steps/pkg"
 	. "first-steps/pkg/mongo"
 	"first-steps/pkg/mongo/models"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 
 var config = Config{}
 var dao = MoviesDAO{}
+var pgDao = pkg.PGDao{}
 
 func AllMoviesEndPoint(w http.ResponseWriter, r *http.Request) {
 	movies, err := dao.FindAll()
@@ -83,13 +85,17 @@ func respondWithJson(w http.ResponseWriter, code int, payload interface{}) {
 func init() {
 	config.Read()
 
-	dao.Server = config.Server
-	dao.Database = config.Database
-	dao.Connect()
+	dao.Server = config.Mongo.Server
+	dao.Database = config.Mongo.Database
+	//dao.Connect()
+
+	pgDao.Config = config.Pg
+	pgDao.InitDb()
 }
 
 func main() {
 	r := mux.NewRouter()
+	r.HandleFunc("/notes", AllNotesEndPoint).Methods("GET")
 	r.HandleFunc("/movies", AllMoviesEndPoint).Methods("GET")
 	r.HandleFunc("/movies", CreateMovieEndPoint).Methods("POST")
 	r.HandleFunc("/movies", UpdateMovieEndPoint).Methods("PUT")
@@ -101,4 +107,13 @@ func main() {
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func AllNotesEndPoint(w http.ResponseWriter, request *http.Request) {
+	movies, err := pgDao.Query(`SELECT t.* FROM public.notes t`)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondWithJson(w, http.StatusOK, movies)
 }

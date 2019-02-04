@@ -7,10 +7,24 @@ import (
 	"os"
 )
 
-// Represents database server and credentials
-type Config struct {
+// todo required camelcase, do not now yet why
+type PG struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	Dbname   string
+}
+
+type Mongo struct {
 	Server   string
 	Database string
+}
+
+// Represents database server and credentials
+type Config struct {
+	Mongo Mongo
+	Pg    PG
 }
 
 // Read and parse the configuration file

@@ -1,4 +1,13 @@
 {
-  "Server": "localhost",
-  "Database": "test_app_movies"
+  "Mongo": {
+    "Server": "localhost",
+    "Database": "test_app_movies"
+  },
+  "Pg": {
+    "Host": "localhost",
+    "Port": "5432",
+    "User": "postgres",
+    "Password": "root",
+    "Dbname": "go_pg"
+  }
 }

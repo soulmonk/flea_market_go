@@ -6,6 +6,7 @@ import (
 	"first-steps/pkg"
 	. "first-steps/pkg/mongo"
 	"first-steps/pkg/mongo/models"
+	models2 "first-steps/pkg/pg/models"
 	"fmt"
 	"github.com/gorilla/mux"
 	"gopkg.in/mgo.v2/bson"
@@ -96,6 +97,9 @@ func init() {
 func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/notes", AllNotesEndPoint).Methods("GET")
+	r.HandleFunc("/notes/{id}", FindNoteEndPoint).Methods("GET")
+	r.HandleFunc("/notes", CreateNotesEndPoint).Methods("POST")
+
 	r.HandleFunc("/movies", AllMoviesEndPoint).Methods("GET")
 	r.HandleFunc("/movies", CreateMovieEndPoint).Methods("POST")
 	r.HandleFunc("/movies", UpdateMovieEndPoint).Methods("PUT")
@@ -109,11 +113,47 @@ func main() {
 	}
 }
 
-func AllNotesEndPoint(w http.ResponseWriter, request *http.Request) {
-	movies, err := pgDao.Query(`SELECT t.* FROM public.notes t`)
+func FindNoteEndPoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	params := mux.Vars(r)
+	log.Println("Start fetch note with id:", params["id"])
+	// TODO find a way convert to int
+	note, err := pgDao.NoteDao.FindById(params["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Note ID")
+		return
+	}
+	respondWithJson(w, http.StatusOK, note)
+}
+
+func CreateNotesEndPoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	log.Println("Start create note")
+	var note models2.Note
+	if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
+		log.Println("Error on decode:", err.Error())
+		respondWithError(w, http.StatusBadRequest, "Invalid request payload")
+		return
+	}
+
+	log.Println("Parsed Note", note)
+
+	if err := pgDao.NoteDao.Create(&note); err != nil {
+		respondWithError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	log.Println("Note created with id", note.ID)
+
+	respondWithJson(w, http.StatusOK, note)
+}
+
+func AllNotesEndPoint(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	log.Println("Start fetch notes")
+	notes, err := pgDao.NoteDao.GetAll()
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondWithJson(w, http.StatusOK, movies)
+	respondWithJson(w, http.StatusOK, notes)
 }

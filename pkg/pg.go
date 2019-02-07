@@ -1,11 +1,11 @@
 package pkg
 
 import (
-	"database/sql"
 	"errors"
 	"first-steps/config"
 	"first-steps/pkg/pg/models"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
 )
@@ -15,7 +15,7 @@ type PGDao struct {
 	NoteDao models.NoteDao
 }
 
-var db *sql.DB
+var db *sqlx.DB
 
 func (pg *PGDao) InitDb() {
 	var err error
@@ -24,11 +24,11 @@ func (pg *PGDao) InitDb() {
 		pg.Config.Host, pg.Config.Port,
 		pg.Config.User, pg.Config.Password, pg.Config.Dbname)
 
-	db, err = sql.Open("postgres", psqlInfo)
+	db, err = sqlx.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	defer db.Close()
+	//defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -39,8 +39,9 @@ func (pg *PGDao) InitDb() {
 	fmt.Println("Successfully connected!")
 }
 
-func initModels(pg PGDao) {
-	pg.NoteDao = models.NoteDao{db}
+func initModels(pg *PGDao) {
+	pg.NoteDao = models.NoteDao{}
+	pg.NoteDao.SetDb(db)
 }
 
 func (pg *PGDao) Query(sql string) (interface{}, error) {

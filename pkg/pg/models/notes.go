@@ -1,59 +1,89 @@
 package models
 
 import (
-	"database/sql"
+	"github.com/jmoiron/sqlx"
+	"log"
 	"time"
 )
 
 type Note struct {
-	ID          int
+	ID          uint64
 	Title       string
 	Description string
-	CreatedAt   time.Time `bson:"created_at,omitempty" json:"created_at,omitempty"`
-	UpdatedAt   time.Time `bson:"updated_at,omitempty" json:"updated_at,omitempty"`
+	CreatedAt   time.Time `bson:"created_at,omitempty" json:"created_at,omitempty" db:"created_at"`
+	UpdatedAt   time.Time `bson:"updated_at,omitempty" json:"updated_at,omitempty" db:"updated_at"`
 }
 
-type repositories struct {
-	Repositories []Note
+type Notes struct {
+	Notes []Note
 }
 
 type NoteDao struct {
-	db *sql.DB
+	db *sqlx.DB
 }
 
-func (dao *NoteDao) getAll() (repositories, error) {
-	res := repositories{}
+func (dao *NoteDao) SetDb(db *sqlx.DB) {
+	dao.db = db
+}
+
+func (dao *NoteDao) Create(note *Note) error {
+	createNoteQuery := `INSERT INTO notes (title, description, created_at, updated_at) VALUES ($1, $2, now(), now()) RETURNING id, created_at, updated_at`
+	err := dao.db.QueryRow(createNoteQuery, note.Title, note.Description).Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt)
+	if err != nil {
+		log.Println("Error on create note")
+		return err
+	}
+	return nil
+}
+
+func (dao *NoteDao) GetAll() (Notes, error) {
+	res := Notes{}
 	var err error
 
-	rows, err := dao.db.Query(`
+	rows, err := dao.db.Queryx(`
 		SELECT
 			id,
-			repository_owner,
-			repository_name,
-			total_stars
-		FROM repositories
-		ORDER BY total_stars DESC`)
+			title,
+			description,
+			created_at,
+			updated_at
+		FROM Notes
+		ORDER BY updated_at DESC`)
+
 	if err != nil {
+		log.Println("Error on executing query")
 		return res, err
 	}
+
 	defer rows.Close()
 	for rows.Next() {
-		repo := Note{}
-		err = rows.Scan(
-			&repo.ID,
-			&repo.Title,
-			&repo.Description,
-			&repo.CreatedAt,
-			&repo.UpdatedAt,
-		)
+		note := Note{}
+		err = rows.StructScan(&note)
+
 		if err != nil {
+			log.Println("Error corrupted while scanning note")
 			return res, err
 		}
-		res.Repositories = append(res.Repositories, repo)
+		log.Println("Fetched note", note)
+		res.Notes = append(res.Notes, note)
 	}
 	err = rows.Err()
 	if err != nil {
+		log.Println("Error on fetching rows")
 		return res, err
 	}
 	return res, err
+}
+
+func (dao *NoteDao) FindById(id string) (Note, error) {
+	query := `SELECT * FROM notes where id = $1`
+	var note = Note{}
+
+	err := dao.db.Get(&note, query, id)
+
+	if err != nil {
+		log.Println("Error on fetching note", err.Error())
+		return note, err
+	}
+	return note, nil
 }

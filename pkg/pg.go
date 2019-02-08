@@ -40,7 +40,7 @@ func (pg *PGDao) InitDb() {
 }
 
 func initModels(pg *PGDao) {
-	pg.NoteDao = models.NoteDao{}
+	pg.NoteDao = models.NoteDao{db: db}
 	pg.NoteDao.SetDb(db)
 }
 

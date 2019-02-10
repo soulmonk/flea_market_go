@@ -27,8 +27,8 @@ type Config struct {
 	Pg    PG
 }
 
-// Read and parse the configuration file
-func (c *Config) Read() {
+// read and parse the configuration file
+func (c *Config) read() {
 	file, e := ioutil.ReadFile("./config.json")
 	if e != nil {
 		log.Fatal(e)
@@ -39,4 +39,11 @@ func (c *Config) Read() {
 	if err != nil {
 		log.Fatal("Cannot unmarshal the json ", err)
 	}
+}
+
+func Load() *Config {
+	config := Config{}
+	config.read()
+
+	return &config
 }

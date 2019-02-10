@@ -22,8 +22,9 @@ type NoteDao struct {
 	db *sqlx.DB
 }
 
-func (dao *NoteDao) SetDb(db *sqlx.DB) {
-	dao.db = db
+func CreateNoteDao(db *sqlx.DB) *NoteDao {
+	dao := NoteDao{db}
+	return &dao
 }
 
 func (dao *NoteDao) Create(note *Note) error {

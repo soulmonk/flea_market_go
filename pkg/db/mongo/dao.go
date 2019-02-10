@@ -1,7 +1,7 @@
 package dao
 
 import (
-	. "first-steps/pkg/mongo/models"
+	. "first-steps/pkg/db/mongongo/models"
 	"gopkg.in/mgo.v2/bson"
 	"log"
 

@@ -1,67 +1,76 @@
 package pg
 
 import (
-	"errors"
 	"first-steps/config"
 	"first-steps/pkg/db/pg/models"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"log"
 
 	_ "github.com/lib/pq"
 )
 
 type Dao struct {
-	NoteDao *models.NoteDao
-	config  *config.PG
+	NoteDao     *models.NoteDao
+	KeywordsDao *models.KeywordDao
+	db          *sqlx.DB
 }
 
 func GetDao(config *config.PG) *Dao {
-	dao := Dao{config: config}
-	dao.initConnection()
+	dao := Dao{}
+	dao.initConnection(config)
 	dao.initModels()
 
 	return &dao
 }
 
-var db *sqlx.DB
-
 func (pg *Dao) Close() error {
-	return db.Close()
+	return pg.db.Close()
 }
 
-func (pg *Dao) initConnection() {
+func (pg *Dao) initConnection(config *config.PG) {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
-		pg.config.Host, pg.config.Port,
-		pg.config.User, pg.config.Password, pg.config.Dbname)
+		config.Host, config.Port,
+		config.User, config.Password, config.Dbname)
 
-	db, err = sqlx.Open("postgres", psqlInfo)
+	db, err := sqlx.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	//defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
 		panic(err)
 	}
 
+	pg.db = db
+
 	fmt.Println("Successfully connected!")
 }
 
 func (pg *Dao) initModels() {
-	pg.NoteDao = models.CreateNoteDao(db)
+	pg.NoteDao = models.CreateNoteDao(pg.db)
+	pg.KeywordsDao = models.CreateKeywordsDao(pg.db)
 }
 
-func (pg *Dao) Query(sql string) (interface{}, error) {
-	return nil, errors.New("not implemented")
+// TODO not used circular because dependency
+func (pg *Dao) Delete(from string, id string, modelName string) error {
+	query := `DELETE FROM ` + from + ` WHERE id = $1`
+	if _, err := pg.db.Exec(query, id); err != nil {
+		log.Println("Error on deleting "+modelName, err.Error())
+		return err
+	}
+	return nil
 }
 
-func (pg *Dao) List(sql string) {
-
-}
-
-func (pg *Dao) Insert(sql string) {
-
+// TODO not used circular because dependency
+func (pg *Dao) FindMyId(from string, id string, model *interface{}, modelName string) error {
+	query := `DELETE FROM ` + from + ` WHERE id = $1`
+	if err := pg.db.Get(model, query, id); err != nil {
+		log.Println("Error on fetching "+modelName, err.Error())
+		return err
+	}
+	return nil
 }

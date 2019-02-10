@@ -2,14 +2,13 @@ package controllers
 
 import (
 	"first-steps/pkg"
+	"first-steps/pkg/controllers/notes"
 	"github.com/gorilla/mux"
 )
 
-var app *pkg.Application
-
 func Init(application *pkg.Application, r *mux.Router) {
-	app = application
-
+	// TODO is authenticated
 	//r.Handle("/api", )
-	notesController(r)
+	notes.Init(application, r)
+	InitKeywordsController(application, r)
 }

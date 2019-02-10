@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"github.com/jmoiron/sqlx"
 	"log"
 	"time"
@@ -10,6 +11,8 @@ type Note struct {
 	ID          uint64
 	Title       string
 	Description string
+	Text        string
+	Keywords    []uint64
 	CreatedAt   time.Time `bson:"created_at,omitempty" json:"created_at,omitempty" db:"created_at"`
 	UpdatedAt   time.Time `bson:"updated_at,omitempty" json:"updated_at,omitempty" db:"updated_at"`
 }
@@ -27,39 +30,44 @@ func CreateNoteDao(db *sqlx.DB) *NoteDao {
 	return &dao
 }
 
+func (dao *NoteDao) Update(note *Note) error {
+	return errors.New("not implemented")
+}
+
 func (dao *NoteDao) Create(note *Note) error {
-	createNoteQuery := `INSERT INTO notes (title, description, created_at, updated_at) VALUES ($1, $2, now(), now()) RETURNING id, created_at, updated_at`
+	query := `INSERT INTO notes (title, description, "text", created_at, updated_at) VALUES ($1, $2, $3, now(), now()) RETURNING id, created_at, updated_at`
 	err := dao.db.
-		QueryRow(createNoteQuery, note.Title, note.Description).
+		QueryRow(query, note.Title, note.Description, note.Text).
 		Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt)
 
 	if err != nil {
 		log.Println("Error on create note")
 		return err
 	}
+
+	// TODO create relation with keywords
+
 	return nil
 }
 
-func (dao *NoteDao) GetAll() (Notes, error) {
+func (dao *NoteDao) List() (Notes, error) {
 	res := Notes{}
 	var err error
 
-	rows, err := dao.db.Queryx(`
-		SELECT
-			id,
-			title,
-			description,
-			created_at,
-			updated_at
-		FROM Notes
-		ORDER BY updated_at DESC`)
+	// todo with keywords
+	rows, err := dao.db.Queryx(`SELECT * FROM notes ORDER BY updated_at DESC`)
 
 	if err != nil {
 		log.Println("Error on executing query")
 		return res, err
 	}
 
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Println("Error corrupted while closing rows:", err.Error())
+		}
+	}()
+
 	for rows.Next() {
 		note := Note{}
 		if err := rows.StructScan(&note); err != nil {

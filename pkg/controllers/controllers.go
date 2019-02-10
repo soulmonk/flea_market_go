@@ -10,5 +10,6 @@ var app *pkg.Application
 func Init(application *pkg.Application, r *mux.Router) {
 	app = application
 
-	r.Handle("/api/", notesController())
+	//r.Handle("/api", )
+	notesController(r)
 }

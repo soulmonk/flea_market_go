@@ -23,6 +23,7 @@ type Mongo struct {
 
 // Represents database server and credentials
 type Config struct {
+	Port  string
 	Mongo Mongo
 	Pg    PG
 }

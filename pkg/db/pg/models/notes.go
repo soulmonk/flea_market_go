@@ -29,7 +29,10 @@ func CreateNoteDao(db *sqlx.DB) *NoteDao {
 
 func (dao *NoteDao) Create(note *Note) error {
 	createNoteQuery := `INSERT INTO notes (title, description, created_at, updated_at) VALUES ($1, $2, now(), now()) RETURNING id, created_at, updated_at`
-	err := dao.db.QueryRow(createNoteQuery, note.Title, note.Description).Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt)
+	err := dao.db.
+		QueryRow(createNoteQuery, note.Title, note.Description).
+		Scan(&note.ID, &note.CreatedAt, &note.UpdatedAt)
+
 	if err != nil {
 		log.Println("Error on create note")
 		return err
@@ -59,18 +62,15 @@ func (dao *NoteDao) GetAll() (Notes, error) {
 	defer rows.Close()
 	for rows.Next() {
 		note := Note{}
-		err = rows.StructScan(&note)
-
-		if err != nil {
-			log.Println("Error corrupted while scanning note")
+		if err := rows.StructScan(&note); err != nil {
+			log.Println("Error corrupted while scanning note:", err.Error())
 			return res, err
 		}
-		log.Println("Fetched note", note)
+
 		res.Notes = append(res.Notes, note)
 	}
-	err = rows.Err()
-	if err != nil {
-		log.Println("Error on fetching rows")
+	if err := rows.Err(); err != nil {
+		log.Println("Error on fetching rows:", err.Error())
 		return res, err
 	}
 	return res, err
@@ -80,11 +80,18 @@ func (dao *NoteDao) FindById(id string) (Note, error) {
 	query := `SELECT * FROM notes where id = $1`
 	var note = Note{}
 
-	err := dao.db.Get(&note, query, id)
-
-	if err != nil {
+	if err := dao.db.Get(&note, query, id); err != nil {
 		log.Println("Error on fetching note", err.Error())
 		return note, err
 	}
 	return note, nil
+}
+
+func (dao *NoteDao) Delete(id string) error {
+	query := `DELETE FROM notes WHERE id = $1`
+	if _, err := dao.db.Exec(query, id); err != nil {
+		log.Println("Error on deleting note", err.Error())
+		return err
+	}
+	return nil
 }

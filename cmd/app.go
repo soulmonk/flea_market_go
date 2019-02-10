@@ -12,13 +12,16 @@ import (
 
 var app = pkg.Application{}
 
-// Parse the configuration file and establish a connection to DB
-func init() {
+func main() {
 	app.Config = config.Load()
 	app.PgDao = pg.GetDao(&app.Config.Pg)
-}
 
-func main() {
+	defer func() {
+		if err := app.PgDao.Close(); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
 	r := mux.NewRouter()
 
 	controllers.Init(&app, r)

@@ -8,13 +8,14 @@ import (
 	"net/http"
 )
 
-func notesController() *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/notes", list).Methods("GET")
-	r.HandleFunc("/notes/{id}", get).Methods("GET")
-	r.HandleFunc("/notes", create).Methods("POST")
+func notesController(r *mux.Router) {
+	//r := mux.NewRouter()
+	r.HandleFunc("/api/notes", list).Methods("GET")
+	r.HandleFunc("/api/notes/{id}", get).Methods("GET")
+	r.HandleFunc("/api/notes", create).Methods("POST")
+	r.HandleFunc("/api/notes/{id}", remove).Methods("DELETE")
 
-	return r
+	//return r
 }
 
 func get(w http.ResponseWriter, r *http.Request) {
@@ -40,8 +41,6 @@ func create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Parsed Note", note)
-
 	if err := app.PgDao.NoteDao.Create(&note); err != nil {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -59,5 +58,17 @@ func list(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	respondWithJson(w, http.StatusOK, notes)
+	respondWithJson(w, http.StatusOK, notes.Notes)
+}
+
+func remove(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+	params := mux.Vars(r)
+	log.Println("Start removing note with id:", params["id"])
+	err := app.PgDao.NoteDao.Delete(params["id"])
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Invalid Note ID")
+		return
+	}
+	respondWithJson(w, http.StatusOK, nil)
 }

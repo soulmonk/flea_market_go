@@ -1,4 +1,4 @@
-package controllers
+package keywords
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 	"net/http"
 )
 
-type KeywordsController struct {
+type Controller struct {
 	dao *models.KeywordDao
 }
 
@@ -20,9 +20,9 @@ type KeywordsController struct {
 //  log.Println(append(prefix, v...))
 //}
 
-func InitKeywordsController(app *pkg.Application, r *mux.Router) {
+func Init(app *pkg.Application, r *mux.Router) {
 	//r := mux.NewRouter()
-	ctrl := KeywordsController{app.PgDao.KeywordsDao}
+	ctrl := Controller{app.PgDao.KeywordsDao}
 
 	r.HandleFunc("/api/keywords", ctrl.list).Methods("GET")
 	r.HandleFunc("/api/keywords/{id}", ctrl.get).Methods("GET")
@@ -32,7 +32,7 @@ func InitKeywordsController(app *pkg.Application, r *mux.Router) {
 	//return r
 }
 
-func (ctrl *KeywordsController) get(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Controller) get(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	params := mux.Vars(r)
 	log.Println("Start fetch model with id:", params["id"])
@@ -45,7 +45,7 @@ func (ctrl *KeywordsController) get(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJson(w, http.StatusOK, note)
 }
 
-func (ctrl *KeywordsController) create(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Controller) create(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	log.Println("Start create model")
 	var model models.Keyword
@@ -64,7 +64,7 @@ func (ctrl *KeywordsController) create(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJson(w, http.StatusOK, model)
 }
 
-func (ctrl *KeywordsController) list(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Controller) list(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	log.Println("Start fetch models")
 	models, err := ctrl.dao.List()
@@ -75,7 +75,7 @@ func (ctrl *KeywordsController) list(w http.ResponseWriter, r *http.Request) {
 	response.RespondWithJson(w, http.StatusOK, models)
 }
 
-func (ctrl *KeywordsController) remove(w http.ResponseWriter, r *http.Request) {
+func (ctrl *Controller) remove(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	params := mux.Vars(r)
 	log.Println("Start removing model with id:", params["id"])

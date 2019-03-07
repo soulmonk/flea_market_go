@@ -30,6 +30,7 @@ type Config struct {
 
 // read and parse the configuration file
 func (c *Config) read() {
+	// TODO relevant path to the runner (app)
 	file, e := ioutil.ReadFile("./config.json")
 	if e != nil {
 		log.Fatal(e)

@@ -16,19 +16,7 @@ type Dao struct {
 	db          *sqlx.DB
 }
 
-func GetDao(config *config.PG) *Dao {
-	dao := Dao{}
-	dao.initConnection(config)
-	dao.initModels()
-
-	return &dao
-}
-
-func (pg *Dao) Close() error {
-	return pg.db.Close()
-}
-
-func (pg *Dao) initConnection(config *config.PG) {
+func InitConnection(config *config.PG) *sqlx.DB {
 	var err error
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -44,8 +32,23 @@ func (pg *Dao) initConnection(config *config.PG) {
 	if err != nil {
 		panic(err)
 	}
+	return db
+}
 
-	pg.db = db
+func GetDao(config *config.PG) *Dao {
+	dao := Dao{}
+	dao.initConnection(config)
+	dao.initModels()
+
+	return &dao
+}
+
+func (pg *Dao) Close() error {
+	return pg.db.Close()
+}
+
+func (pg *Dao) initConnection(config *config.PG) {
+	pg.db = InitConnection(config)
 
 	fmt.Println("Successfully connected!")
 }

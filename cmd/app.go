@@ -13,6 +13,7 @@ import (
 var app = pkg.Application{}
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	app.Config = config.Load()
 	app.PgDao = pg.GetDao(&app.Config.Pg)
 

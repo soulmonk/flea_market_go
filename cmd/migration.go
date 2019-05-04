@@ -11,6 +11,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting migration")
 	cfg := config.Load()
+
 	db := pg.InitConnection(&cfg.Pg)
 
 	defer func() {

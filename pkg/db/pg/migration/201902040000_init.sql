@@ -1,19 +1,14 @@
 create table notes
 (
-    id          serial,
+    id          serial not null
+        constraint notes_pk
+            primary key,
     title       varchar(64),
     description varchar(255),
     text        text,
     created_at  timestamp default now(),
     updated_at  timestamp default now()
 );
-
-create unique index notes_id_uindex
-    on notes (id);
-
-alter table notes
-    add constraint notes_pk
-        primary key (id);
 
 create table keywords
 (

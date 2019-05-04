@@ -59,7 +59,7 @@ func applyMigration(db *sqlx.DB, files migrationFiles) (err error) {
 		var query = string(file.data)
 		log.Println("Run query:\n", query)
 		if _, err = db.Exec(query); err != nil {
-			log.Println("Error on deleting note", err.Error())
+			log.Println("Error applying migration", err.Error())
 			return
 		}
 
@@ -82,7 +82,7 @@ func create(db *sqlx.DB, name string) error {
 		log.Println("Error on create note")
 		return err
 	}
-	log.Println("Created ne record:", id)
+	log.Println("Created new record:", id)
 
 	return nil
 }
@@ -94,7 +94,7 @@ func loadMigration(db *sqlx.DB, count uint64) (migrations []string, err error) {
 		return
 	}
 
-	rows, err := db.Queryx(`SELECT name FROM migration`)
+	rows, err := db.Queryx(`SELECT name FROM migrations`)
 
 	if err != nil {
 		log.Println("Error on executing query")
@@ -117,7 +117,7 @@ func loadMigration(db *sqlx.DB, count uint64) (migrations []string, err error) {
 		migrations = append(migrations, name)
 	}
 	if err := rows.Err(); err != nil {
-		log.Println("Error on fetching rows:", err.Error())
+		log.Println("Error on migrations rows:", err.Error())
 		return nil, err
 	}
 	return migrations, err
@@ -136,21 +136,15 @@ func initTable(db *sqlx.DB) (uint64, error) {
 		//return count, err
 
 		query = `CREATE TABLE migrations(
-  id serial,
+  id serial not null
+        constraint migrations_pk
+            primary key,
   name varchar(255),
   created_at timestamp default now()
 );
-
-create unique index migrations_id_uindex
-  on migrations (id);
-
-alter table migrations
-  add constraint migrations_pk
-    primary key (id);
 `
-
 		if _, err := db.Exec(query); err != nil {
-			log.Println("Error on deleting note", err.Error())
+			log.Println("Error initTable", err.Error())
 			return count, err
 		}
 	}

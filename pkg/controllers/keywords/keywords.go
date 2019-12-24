@@ -37,12 +37,12 @@ func (ctrl *Controller) get(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	log.Println("Start fetch model with id:", params["id"])
 	// TODO find a way convert to int
-	note, err := ctrl.dao.FindById(params["id"])
+	model, err := ctrl.dao.FindById(params["id"])
 	if err != nil {
 		response.RespondWithError(w, http.StatusBadRequest, "Invalid Note ID")
 		return
 	}
-	response.RespondWithJson(w, http.StatusOK, note)
+	response.RespondWithJson(w, http.StatusOK, model)
 }
 
 func (ctrl *Controller) create(w http.ResponseWriter, r *http.Request) {
